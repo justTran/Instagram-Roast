@@ -1,4 +1,4 @@
-import glob, json, threading
+import glob, json, math, threading
 import tkinter as tk
 from description import *
 from imagePrediction import *
@@ -11,6 +11,8 @@ class unpopularInstagram(tk.Frame):
 
     def __init__(self, master = None):
         self.images = []
+        self.threads = []
+        self.results = []
         self.master = master
         self.menubar = tk.Menu(self.master)
         self.nice = False
@@ -25,8 +27,8 @@ class unpopularInstagram(tk.Frame):
         self.about = tk.Menu(self.menubar, tearoff = 0)
         self.about.add_command(label = "Configure Credentials", command = self.settingsMenu)
         self.menubar.add_cascade(label = "Settings", menu = self.about)
-        self.directorySelector = tk.Button(self.master, text = "Select the fucking directory", width = 22, command = self.getDirectory)
-        self.beginProcess = tk.Button(self.master, text = "Fucking shame you", width = 22, command = self.start)
+        self.directorySelector = tk.Button(self.master, text = "Select the awful directory", width = 22, command = self.getDirectory)
+        self.beginProcess = tk.Button(self.master, text = "Shame you", width = 22, command = self.start)
         self.directoryLabel = tk.Label(text="No Directory Selected")
         self.toggle = tk.Checkbutton(self.master, text = "Toggle Nice Mode", command = self.toggleExtrema)
         self.directorySelector.grid(row = 0, column = 0)
@@ -40,8 +42,8 @@ class unpopularInstagram(tk.Frame):
             self.beginProcess.configure(text = "Find the popular image")
             self.nice = True
         else:
-            self.directorySelector.configure(text = "Select the fucking directory")
-            self.beginProcess.configure(text = "Fucking shame you")
+            self.directorySelector.configure(text = "Select the awful directory")
+            self.beginProcess.configure(text = "Shame you")
             self.nice = False
         root.update()
 
@@ -70,10 +72,31 @@ class unpopularInstagram(tk.Frame):
             return
 
         if self.images != []: del self.images[:]
-            
-        for types in [glob.glob(self.path + e) for e in ['/*.jpg', '/*.png']]:
-            for item in types:
-                self.images.append(tuple([item, imagePrediction(item).getValue()]))
+        if self.results != []: del self.results[:]
+        
+        search = [glob.glob(self.path + e) for e in ['/*.jpg', '/*.png']]
+        self.results = []
+
+        for types in search:
+            if len(types) != 0:
+                total = len(types)
+            self.results.extend(types)
+
+        currentIndex = 0
+        end = math.floor(total/4)
+        for i in range(1, 5):
+            t = threading.Thread(target=self.processImages, args=[currentIndex, end])
+            self.threads.append(t)
+            t.start()
+
+            currentIndex = end + 1
+            if (i != 3):
+                end = math.floor(total/4)*(i+1)
+            else:
+                end = total
+
+        for i in range(0, 4):
+            self.threads[i].join()
 
         try:
             self.images = sorted(self.images, reverse = self.nice, key = lambda x: x[1])
@@ -88,6 +111,10 @@ class unpopularInstagram(tk.Frame):
             messagebox.showwarning("Warning", "None of the images found are compatible!")
             self.updateGUI(False)
 
+    def processImages(self, start, end):
+        for i in range(start, end):
+            self.images.append(tuple([self.results[i], imagePrediction(self.results[i]).getValue()]))
+
     def showImage(self, path):
         imageWindow = tk.Toplevel()
         imageWindow.title(f"Result Image: Score of {self.score}")
@@ -96,7 +123,7 @@ class unpopularInstagram(tk.Frame):
         load = Image.open(path)
         try:
             for orientation in ExifTags.TAGS.keys():
-                if ExifTags.TAGS[orientation]=='Orientation':
+                if ExifTags.TAGS[orientation] == 'Orientation':
                     break
                 
             exif = dict(load._getexif().items())
@@ -115,8 +142,8 @@ class unpopularInstagram(tk.Frame):
         [iWidth, iHeight] = load.size
 
         if (iWidth > width) or (iHeight > height):
-            iHeight *= 0.45
-            iWidth *= 0.45
+            iHeight *= 0.25
+            iWidth *= 0.25
         
         render = ImageTk.PhotoImage(load.resize((int(iWidth), int(iHeight))))
         self.resultImage = tk.Label(imageWindow, image = render)
@@ -167,8 +194,9 @@ class unpopularInstagram(tk.Frame):
                 creds = json.load(f)
 
         except FileNotFoundError as e:
-            self.saveSettings()
-            self.postAbomination(image)
+            messagebox.showerror("Warning", "Credentials not initiated! Go to the settings menu to set them.")
+            self.updateGUI(False)
+            return
 
         if self.session is None:
             self.session = Session(creds['username'], creds['password'])
