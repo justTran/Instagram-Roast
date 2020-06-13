@@ -48,19 +48,13 @@ class unpopularInstagram(tk.Frame):
         root.update()
 
     def updateGUI(self, lock):
-        if lock:
-            self.beginProcess.configure(state="disable")
-        
-        else:
-            self.beginProcess.configure(state="normal")
-
+        if lock: self.beginProcess.configure(state="disable")
+        else: self.beginProcess.configure(state="normal")
         root.update()
         
     def getDirectory(self):
-        if self.nice:
-            title = "Choose the directory to find your masterpiece"
-        else:
-            title = "Roast this directory, dipshit"
+        if self.nice: title = "Choose the directory to find your masterpiece"
+        else: title = "Roast this directory, dipshit"
 
         self.path = filedialog.askdirectory(title = title, mustexist = True)
         self.directoryLabel.configure(text = self.path)
@@ -73,11 +67,8 @@ class unpopularInstagram(tk.Frame):
 
         if self.images != []: del self.images[:]
         if self.results != []: del self.results[:]
-        
-        search = [glob.glob(self.path + e) for e in ['/*.jpg', '/*.png']]
-        self.results = []
 
-        for types in search:
+        for types in [glob.glob(self.path + e) for e in ['/*.jpg', '/*.png']]:
             if len(types) != 0:
                 total = len(types)
             self.results.extend(types)
@@ -90,10 +81,8 @@ class unpopularInstagram(tk.Frame):
             t.start()
 
             currentIndex = end + 1
-            if (i != 3):
-                end = math.floor(total/4)*(i+1)
-            else:
-                end = total
+            if (i != 3): end = math.floor(total/4)*(i+1)
+            else: end = total
 
         for i in range(0, 4):
             self.threads[i].join()
@@ -123,19 +112,13 @@ class unpopularInstagram(tk.Frame):
         load = Image.open(path)
         try:
             for orientation in ExifTags.TAGS.keys():
-                if ExifTags.TAGS[orientation] == 'Orientation':
-                    break
+                if ExifTags.TAGS[orientation] == 'Orientation': break
                 
             exif = dict(load._getexif().items())
 
-            if exif[orientation] == 3:
-                load = load.transpose(Image.ROTATE_180)
-
-            elif exif[orientation] == 6:
-                load = load.transpose(Image.ROTATE_270)
-
-            elif exif[orientation] == 8:
-                load = load.transpose(Image.ROTATE_90)
+            if exif[orientation] == 3: load = load.transpose(Image.ROTATE_180)
+            elif exif[orientation] == 6: load = load.transpose(Image.ROTATE_270)
+            elif exif[orientation] == 8: load = load.transpose(Image.ROTATE_90)
         except:
             pass
 
