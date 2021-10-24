@@ -1,4 +1,7 @@
-import glob, json, math, threading
+import glob
+import json
+import math
+import threading
 import tkinter as tk
 from description import *
 from imagePrediction import *

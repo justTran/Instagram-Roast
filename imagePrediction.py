@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import os
 import torch
 import torchvision.models
 import torchvision.transforms as transforms
@@ -15,7 +16,7 @@ class imagePrediction():
         model = torchvision.models.resnet50()
         # model.avgpool = nn.AdaptiveAvgPool2d(1) # for any size of the input
         model.fc = torch.nn.Linear(in_features=2048, out_features=1)
-        model.load_state_dict(torch.load('model/model-resnet50.pth', map_location=self.device)) 
+        model.load_state_dict(torch.load(os.getcwd() + '\\model\\model-resnet50.pth', map_location=self.device)) 
         model.eval().to(self.device)
         self.predict(image, model)
 
